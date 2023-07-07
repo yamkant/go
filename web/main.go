@@ -2,10 +2,9 @@ package main
 
 import (
 	"net/http"
-
-	"github.com/yamkant/go/web/myapp"
+	"example.com/user/web/myapp"
 )
 
 func main() {
-    http.ListenAndServe(":3000", myapp.NewHttpHandler)
+    http.ListenAndServe(":3000", myapp.NewHandler())
 }
