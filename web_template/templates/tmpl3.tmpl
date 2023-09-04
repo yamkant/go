@@ -1,0 +1,14 @@
+<html>
+<head>
+<title>Template</title>
+</head>
+<body>
+{{range . -}}
+{{template "tmpl1.tmpl" . -}}
+{{end -}}
+<div>
+- template 연산 사용시 발생하는 공백을 제거하기 위해 중괄호 사이에 '-' 추가
+- html/template 모듈을 임포트하는 경우, 특수문자와 같은 애들을 사용 방식에 따라 url 처리
+</div>
+</body>
+</html>
