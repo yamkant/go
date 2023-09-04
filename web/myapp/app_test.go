@@ -110,3 +110,34 @@ func TestDeleteUser(t *testing.T) {
     data, _ = ioutil.ReadAll(resp.Body)
     assert.Contains(string(data), "Deleted User ID:" + strconv.Itoa(user.ID))
 }
+
+func TestFooHandler_WithoutJson(t *testing.T) {
+    assert := assert.New(t)
+
+    res := httptest.NewRecorder()
+    req := httptest.NewRequest("GET", "/foo", nil)
+
+    mux := NewHttpHandler()
+    mux.ServeHTTP(res, req)
+
+    assert.Equal(http.StatusBadRequest, res.Code)
+}
+
+func TestFooHandler_WithJson(t *testing.T) {
+    assert := assert.New(t)
+
+    res := httptest.NewRecorder()
+    req := httptest.NewRequest("POST", "/foo", 
+        strings.NewReader(`{"first_name": "yam", "last_name": "kim", "email": "test@example.com"}`))
+
+    mux := NewHttpHandler()
+    mux.ServeHTTP(res, req)
+
+    assert.Equal(http.StatusCreated, res.Code)
+
+    user := new(User)
+    err := json.NewDecoder(res.Body).Decode(user)
+    assert.Nil(err)
+    assert.Equal("yam", user.FirstName)
+    assert.Equal("kim", user.LastName)
+}

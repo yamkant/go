@@ -1,12 +1,13 @@
 package myapp
 
 import (
+	"encoding/json"
 	"fmt"
-    "encoding/json"
+	"net/http"
 	"strconv"
 	"time"
-	"net/http"
-    "github.com/gorilla/mux"
+
+	"github.com/gorilla/mux"
 )
 
 
@@ -100,6 +101,43 @@ func NewHandler() http.Handler {
     mux.HandleFunc("/users", createUserHandler).Methods("POST")
     mux.HandleFunc("/users/{id:[0-9]+}", getUserInfoHandler).Methods("GET")
     mux.HandleFunc("/users/{id:[0-9]+}", deleteUserHandler).Methods("DELETE")
+
+    return mux
+}
+
+type fooHandler struct{}
+
+func (f *fooHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	user := new(User)
+	err := json.NewDecoder(r.Body).Decode(user)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, "Bad Request: ", err)
+		return
+	}
+	user.CreatedAt = time.Now()
+
+	data, _ := json.Marshal(user)
+	w.Header().Add("content-type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprint(w, string(data))
+}
+
+func barHandler(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+	if name == "" {
+		name = "World"
+	}
+	fmt.Fprintf(w, "Hello %s!", name)
+}
+
+func NewHttpHandler() http.Handler {
+    mux := http.NewServeMux()
+    mux.HandleFunc("/", indexHandler)
+
+    mux.HandleFunc("/bar", barHandler)
+
+    mux.Handle("/foo", &fooHandler{})
 
     return mux
 }
