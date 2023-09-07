@@ -1,6 +1,8 @@
 package app
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -18,6 +20,10 @@ type Todo struct {
 	CreatedAt	time.Time	`json:"created_at"`
 }
 
+type TodoCompleted struct {
+	Completed	bool		`json:"completed"`
+}
+
 var todoMap map[int]*Todo
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -30,12 +36,6 @@ func getTodoListHandler(w http.ResponseWriter, r *http.Request) {
 		list = append(list, v)
 	}
 	rd.JSON(w, http.StatusOK, list)
-}
-
-func addTestTodos() {
-	todoMap[1] = &Todo{1, "Buy a milk", false, time.Now()}
-	todoMap[2] = &Todo{2, "Excercise", true, time.Now()}
-	todoMap[3] = &Todo{3, "Home work", false, time.Now()}
 }
 
 func addTodoHandler(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +64,20 @@ func removeTodoHandler(w http.ResponseWriter, r *http.Request) {
 func updateTodoHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, _ := strconv.Atoi(vars["id"])
-	completed := r.FormValue("completed") == "true"
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+		return
+	}
+
+	var data TodoCompleted
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		http.Error(w, "Failed to parse JSON data", http.StatusBadRequest)
+		return
+	}
+	completed := data.Completed
 
 	if todo, ok := todoMap[id]; ok {
 		todo.Completed = completed
@@ -76,15 +89,14 @@ func updateTodoHandler(w http.ResponseWriter, r *http.Request) {
 
 func MakeNewHandler() http.Handler {
 	todoMap = make(map[int]*Todo)
-	addTestTodos()
 
 	rd = render.New()
 	router := mux.NewRouter()
 	router.HandleFunc("/", indexHandler)
 	router.HandleFunc("/todos", getTodoListHandler).Methods("GET")
 	router.HandleFunc("/todos", addTodoHandler).Methods("POST")
-	router.HandleFunc("/todos/{id:[0-9]+}", removeTodoHandler).Methods("DELETE")
 	router.HandleFunc("/todos/{id:[0-9]+}", updateTodoHandler).Methods("PATCH")
+	router.HandleFunc("/todos/{id:[0-9]+}", removeTodoHandler).Methods("DELETE")
 
 	return router
 }
