@@ -32,13 +32,16 @@
             var id = $(this).closest("li").attr('id');
             var $self = $(this);
 
-            var complete = false;
+            var completed = false;
             if ($(this).attr('checked')) {
-                complete = true;
+                completed = true;
             }
             $.ajax({
                 url: "todos/" + id,
                 type: "PATCH",
+                data: {
+                    completed: completed,
+                },
                 success: function(data) {
                     if (data.success) {
                         if ($self.attr('checked')) {

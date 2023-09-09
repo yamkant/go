@@ -13,7 +13,6 @@ import (
 
 var rd *render.Render
 
-
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/todo.html", http.StatusTemporaryRedirect)
 }
