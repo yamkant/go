@@ -5,44 +5,27 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"time"
 
+	"example.com/m/model"
 	"github.com/gorilla/mux"
 	"github.com/unrolled/render"
 )
 
 var rd *render.Render
 
-type Todo struct {
-	ID			int		`json:"id"`
-	Name		string		`json:"name"`
-	Completed	bool		`json:"completed"`
-	CreatedAt	time.Time	`json:"created_at"`
-}
-
-type TodoCompleted struct {
-	Completed	bool		`json:"completed"`
-}
-
-var todoMap map[int]*Todo
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/todo.html", http.StatusTemporaryRedirect)
 }
 
 func getTodoListHandler(w http.ResponseWriter, r *http.Request) {
-	list := []*Todo{}
-	for _, v := range todoMap {
-		list = append(list, v)
-	}
+	list := model.GetTodos()
 	rd.JSON(w, http.StatusOK, list)
 }
 
 func addTodoHandler(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
-	id := len(todoMap) + 1
-	todo := &Todo{id, name, false, time.Now()}
-	todoMap[id] = todo
+	todo := model.AddTodo(name)
 	rd.JSON(w, http.StatusCreated, todo)
 }
 
@@ -50,11 +33,15 @@ type Success struct {
 	Success bool `json:"success"`
 }
 
+type TodoCompleted struct {
+	Completed	bool		`json:"completed"`
+}
+
 func removeTodoHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, _ := strconv.Atoi(vars["id"])
-	if _, ok := todoMap[id]; ok {
-		delete(todoMap, id)
+	ok := model.RemoveTodo(id)
+	if ok {
 		rd.JSON(w, http.StatusOK, Success{true})
 	} else {
 		rd.JSON(w, http.StatusOK, Success{false})
@@ -77,10 +64,9 @@ func updateTodoHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to parse JSON data", http.StatusBadRequest)
 		return
 	}
-	completed := data.Completed
 
-	if todo, ok := todoMap[id]; ok {
-		todo.Completed = completed
+	ok := model.UpdateTodo(id, data.Completed)
+	if ok {
 		rd.JSON(w, http.StatusOK, Success{true})
 	} else {
 		rd.JSON(w, http.StatusOK, Success{false})
@@ -88,7 +74,6 @@ func updateTodoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func MakeNewHandler() http.Handler {
-	todoMap = make(map[int]*Todo)
 
 	rd = render.New()
 	router := mux.NewRouter()

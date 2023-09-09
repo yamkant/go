@@ -12,10 +12,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"example.com/m/model"
 )
 
-func getTodoBodyData(resp *http.Response) (Todo, error) {
-	var todo Todo
+func getTodoBodyData(resp *http.Response) (model.Todo, error) {
+	var todo model.Todo
 	err := json.NewDecoder(resp.Body).Decode(&todo)
 	if err != nil {
 		return todo, err
@@ -23,8 +24,8 @@ func getTodoBodyData(resp *http.Response) (Todo, error) {
 	return todo, nil
 }
 
-func getTodoBodyDataList(resp *http.Response) ([]*Todo, error) {
-	todos := []*Todo{}
+func getTodoBodyDataList(resp *http.Response) ([]*model.Todo, error) {
+	todos := []*model.Todo{}
 	err := json.NewDecoder(resp.Body).Decode(&todos)
 	if err != nil {
 		return todos, err
