@@ -16,9 +16,9 @@
     
         var addItem = function(item) {
             if (item.completed) {
-                todoListItem.append("<li class='completed'" + " id='" + item.id + "'><div class='form-check'><label class='form-check-label'><input class='checkbox' type='checkbox' checked='checked' />" + item.name + "<i class='input-helper'></i></label></div><i class='remove mdi mdi-close-circle-outline'></i></li>");
+                todoListItem.append("<li class='completed'"+ " id='" + item.id + "'><div class='form-check'><label class='form-check-label'><input class='checkbox' type='checkbox' checked='checked' />" + item.name + "<i class='input-helper'></i></label></div><i class='remove mdi mdi-close-circle-outline'></i></li>");
             } else {
-                todoListItem.append("<li " + "id='" + item.id + "'><div class='form-check'><label class='form-check-label'><input class='checkbox' type='checkbox' />" + item.name + "<i class='input-helper'></i></label></div><i class='remove mdi mdi-close-circle-outline'></i></li>");
+                todoListItem.append("<li "+ " id='" + item.id + "'><div class='form-check'><label class='form-check-label'><input class='checkbox' type='checkbox' />" + item.name + "<i class='input-helper'></i></label></div><i class='remove mdi mdi-close-circle-outline'></i></li>");
             }
         };
     
@@ -29,19 +29,20 @@
         });
     
         todoListItem.on('change', '.checkbox', function() {
-            var id = $(this).closest("li").attr('id');
-            var $self = $(this);
+            let id = $(this).closest("li").attr('id');
+            let $self = $(this);
 
-            var completed = false;
-            if ($(this).attr('checked')) {
-                completed = true;
+            let completed = true;
+            if ($self.attr('checked')) {
+                completed = false;
             }
+            
             $.ajax({
                 url: "todos/" + id,
                 type: "PATCH",
-                data: {
-                    completed: completed,
-                },
+                data: JSON.stringify({
+                    "completed": completed,
+                }),
                 success: function(data) {
                     if (data.success) {
                         if ($self.attr('checked')) {
@@ -49,7 +50,7 @@
                         } else {
                             $self.attr('checked', 'checked');
                         }
-                        $(this).closest("li").toggleClass('completed');
+                        $self.closest("li").toggleClass('completed');
                     }
                 }
             })

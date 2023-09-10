@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strconv"
 
 	"testing"
@@ -43,8 +44,13 @@ func getDeleteAPIResponseData(resp *http.Response) (Success, error){
 }
 
 func TestTodos(t *testing.T) {
+	os.Remove("./test.db")
 	assert := assert.New(t)
-	ts := httptest.NewServer(MakeNewHandler())
+
+	ah := MakeNewHandler()
+	defer ah.Close()
+
+	ts := httptest.NewServer(ah)
 	defer ts.Close()
 
 	// NOTE: CREATE TEST

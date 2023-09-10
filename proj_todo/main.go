@@ -10,7 +10,8 @@ import (
 )
 
 func main() {
-	mux := app.MakeNewHandler()
+	mux := app.MakeNewHandler("./test.db")
+	defer mux.Close()
 	n := negroni.Classic()
 	n.UseHandler(mux)
 
