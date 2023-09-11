@@ -3,12 +3,13 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"example.com/m/app"
 )
 
 func main() {
-	mux := app.MakeNewHandler("./test.db")
+	mux := app.MakeNewHandler(os.Getenv("DATABASE_URL"))
 	defer mux.Close()
 
 

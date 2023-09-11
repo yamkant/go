@@ -19,6 +19,7 @@ type DBHandler interface {
 
 // NOTE: 패키지가 시작될 때 한 번만 호출되는 함수
 var handler DBHandler
-func NewDBHandler(filepath string) DBHandler {
-	return newSqliteHandler(filepath)
+func NewDBHandler(dbConn string, reset bool) DBHandler {
+	// return newSqliteHandler(dbConn, reset)
+	return newPQHandler(dbConn, reset)
 }

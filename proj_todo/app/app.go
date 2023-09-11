@@ -116,7 +116,7 @@ func CheckSignin(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) 
 	http.Redirect(w, r, "/signin.html", http.StatusTemporaryRedirect)
 }
 
-func MakeNewHandler(filepath string) *AppHandler {
+func MakeNewHandler(filepath string, reset bool) *AppHandler {
 	r := mux.NewRouter()
 	n := negroni.New(
 		negroni.NewRecovery(), 
@@ -130,7 +130,7 @@ func MakeNewHandler(filepath string) *AppHandler {
 
 	a := &AppHandler{
 		Handler: n,
-		db: model.NewDBHandler(filepath),
+		db: model.NewDBHandler(filepath, reset),
 	}
 
 	r.HandleFunc("/", a.indexHandler)

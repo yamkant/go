@@ -49,10 +49,8 @@ func TestTodos(t *testing.T) {
 		return "testsessionId"
 	}
 
-	os.Remove("./test.db")
 	assert := assert.New(t)
-
-	ah := MakeNewHandler("./test.db")
+	ah := MakeNewHandler(os.Getenv("TEST_DATABASE_URL"), true)
 	defer ah.Close()
 
 	ts := httptest.NewServer(ah)

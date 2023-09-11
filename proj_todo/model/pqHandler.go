@@ -2,23 +2,22 @@ package model
 
 import (
 	"database/sql"
-	"fmt"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 )
 
-type sqliteHandler struct {
+type pqHandler struct {
 	db *sql.DB
 }
 
-func (s *sqliteHandler) close() {
+func (s *pqHandler) close() {
 	s.db.Close()
 }
 
-func (s *sqliteHandler) GetTodos(sessionId string) []*Todo {
+func (s *pqHandler) GetTodos(sessionId string) []*Todo {
 	todos := []*Todo{}
-	rows, err := s.db.Query("SELECT id, name, completed, createdAt FROM todos WHERE sessionId=?", sessionId)
+	rows, err := s.db.Query("SELECT id, name, completed, createdAt FROM todos WHERE sessionId=$1", sessionId)
 	if err != nil {
 		panic(err)
 	}
@@ -32,31 +31,29 @@ func (s *sqliteHandler) GetTodos(sessionId string) []*Todo {
 	return todos
 }
 
-func (s *sqliteHandler) AddTodo(name string, sessionId string) *Todo {
-	stmt, err := s.db.Prepare("INSERT INTO todos (sessionId, name, completed, createdAt) VALUES (?, ?, ?, datetime('now'))")
+func (s *pqHandler) AddTodo(name string, sessionId string) *Todo {
+	stmt, err := s.db.Prepare("INSERT INTO todos (sessionId, name, completed, createdAt) VALUES ($1, $2, $3, NOW()) RETURNING id")
 	if err != nil {
 		panic(err)
 	}
-	result, err := stmt.Exec(sessionId, name, false)
+	var id int
+	err = stmt.QueryRow(sessionId, name, false).Scan(&id)
 	if err != nil {
 		panic(err)
 	}
-
-	id, _ := result.LastInsertId()
 	var todo Todo
-	todo.ID = int(id)
+	todo.ID = id
 	todo.Name = name
 	todo.Completed = false
 	todo.CreatedAt = time.Now()
 	return &todo
 }
 
-func (s *sqliteHandler) UpdateTodo(id int, completed bool) bool {
-	stmt, err := s.db.Prepare("UPDATE todos SET completed=? WHERE id=?")
+func (s *pqHandler) UpdateTodo(id int, completed bool) bool {
+	stmt, err := s.db.Prepare("UPDATE todos SET completed=$1 WHERE id=$2")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(id, completed)
 	result, err := stmt.Exec(completed, id)
 	if err != nil {
 		panic(err)
@@ -65,8 +62,8 @@ func (s *sqliteHandler) UpdateTodo(id int, completed bool) bool {
 	return cnt > 0
 }
 
-func (s *sqliteHandler) RemoveTodo(id int) bool {
-	stmt, err := s.db.Prepare("DELETE FROM todos WHERE id=?")
+func (s *pqHandler) RemoveTodo(id int) bool {
+	stmt, err := s.db.Prepare("DELETE FROM todos WHERE id=$1")
 	if err != nil {
 		panic(err)
 	}
@@ -79,12 +76,12 @@ func (s *sqliteHandler) RemoveTodo(id int) bool {
 }
 
 
-func (s *sqliteHandler) Close() {
+func (s *pqHandler) Close() {
 	s.db.Close()
 }
 
-func newSqliteHandler(dbConn string, reset bool) DBHandler {
-	database, err := sql.Open("sqlite3", dbConn)
+func newPQHandler(dbConn string, reset bool) DBHandler {
+	database, err := sql.Open("postgres", dbConn)
 	if err != nil {
 		panic(err)
 	}
@@ -103,22 +100,30 @@ func newSqliteHandler(dbConn string, reset bool) DBHandler {
 
 	stmt, err := database.Prepare(
 		`CREATE TABLE IF NOT EXISTS todos (
-			id        INTEGER  PRIMARY KEY AUTOINCREMENT,
-			sessionId STRING,
+			id        SERIAL PRIMARY KEY,
+			sessionId VARCHAR(256),
 			name      TEXT,
 			completed BOOLEAN,
-			createdAt DATETIME
-		);
-		CREATE INDEX IF NOT EXISTS sessionIdIndexOnTodos ON todos (
+			createdAt TIMESTAMP
+		);`)
+	if err != nil {
+		panic(err)
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		panic(err)
+	}
+
+	stmt, err = database.Prepare(
+		`CREATE INDEX IF NOT EXISTS sessionIdIndexOnTodos ON todos (
 			sessionId ASC
 		)`)
 	if err != nil {
 		panic(err)
 	}
-
 	_, err = stmt.Exec()
 	if err != nil {
 		panic(err)
 	}
-	return &sqliteHandler{db: database}
+	return &pqHandler{db: database}
 }
