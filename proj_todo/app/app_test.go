@@ -44,10 +44,15 @@ func getDeleteAPIResponseData(resp *http.Response) (Success, error){
 }
 
 func TestTodos(t *testing.T) {
+	// NOTE: Test mock up
+	getSessionID = func (r *http.Request) string {
+		return "testsessionId"
+	}
+
 	os.Remove("./test.db")
 	assert := assert.New(t)
 
-	ah := MakeNewHandler()
+	ah := MakeNewHandler("./test.db")
 	defer ah.Close()
 
 	ts := httptest.NewServer(ah)

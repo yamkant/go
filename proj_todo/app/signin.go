@@ -50,12 +50,18 @@ func getGoogleUserInfo(code string) ([]byte, error) {
 }
 
 func googleAuthCallback(w http.ResponseWriter, r *http.Request) {
-	oauthstate, _ := r.Cookie("oauthstate")
+	oauthstate, err := r.Cookie("oauthstate")
+	if err != nil {
+		log.Printf(err.Error())
+		http.Error(w, err.Error(), http.StatusTemporaryRedirect)
+		return
+	}
 
 	if r.FormValue("state") != oauthstate.Value {
 		errMsg := fmt.Sprintf("invalid google oauth state cookie:%s state:%s\n", oauthstate, r.FormValue("state"))
 		log.Printf(errMsg)
 		http.Error(w, errMsg, http.StatusTemporaryRedirect)
+		return
 	}
 
 	data, err := getGoogleUserInfo(r.FormValue("code"))
@@ -100,7 +106,6 @@ func generateStateOauthCookie(w http.ResponseWriter) string {
 	state := base64.URLEncoding.EncodeToString(b)
 	cookie := &http.Cookie{Name: "oauthstate", Value: state, Expires: expiration}
 	http.SetCookie(w, cookie)
-	fmt.Println(cookie)
 	return state
 }
 
